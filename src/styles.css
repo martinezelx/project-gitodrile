@@ -235,7 +235,7 @@ button { font: inherit; }
 }
 
 nav { display: grid; gap: 6px; }
-.nav--secondary { margin-top: auto; padding-top: var(--space-4); border-top: 1px solid var(--border-subtle); }
+.nav--secondary { margin-top: auto; padding-top: var(--space-5); }
 .nav-item {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 12px; border: 0; border-radius: var(--radius-sm); color: var(--text-secondary);
@@ -330,7 +330,7 @@ h1 { margin-bottom: 0; font-size: 22px; letter-spacing: -0.01em; }
 .segmented-control__option--active { background: var(--surface-raised); color: var(--text-primary); box-shadow: var(--shadow-sm); }
 
 .settings-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
-.settings-row + .settings-row { margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--border-subtle); }
+.settings-row + .settings-row { margin-top: var(--space-4); }
 .settings-row strong { display: block; margin-bottom: 2px; }
 .settings-row p { color: var(--text-secondary); font-size: 14px; margin-bottom: 0; }
 .settings-row__warning { color: var(--status-danger); }

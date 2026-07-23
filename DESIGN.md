@@ -20,7 +20,7 @@ The visual language uses:
 - moderate rounded corners (14–18px on cards/panels, 8–10px on controls) — rounded enough to feel approachable, not so large it reads as a decorative concept app;
 - **opaque panels**, not translucent glass — depth comes from `--shadow-sm/md/lg`, not `backdrop-filter` blur;
 - layered surfaces distinguished by shadow and a subtle tone shift, not by transparency;
-- thin, low-contrast borders as a secondary depth cue alongside shadow;
+- thin, low-contrast borders around cards/panels as a secondary depth cue alongside shadow — but not as divider rules *inside* a list of rows (settings rows, nav groups); separate those with spacing alone, which reads cleaner than a hairline between every item;
 - generous spacing around primary actions;
 - compact spacing in file lists and diffs;
 - a crocodile mascot used selectively.
