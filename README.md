@@ -1,0 +1,147 @@
+# GitOdrile
+
+> A friendly, modern desktop Git client for people who want version control without Git jargon.
+
+GitOdrile is an early-stage cross-platform desktop application for Windows, macOS, and Linux. Its goal is not to turn Git commands into prettier buttons, but to redesign the Git experience around user intent, safety, and understandable language.
+
+## Product principles
+
+- **Intent over commands** — say “Save a version” instead of “Commit”.
+- **Safety by default** — create recovery points before destructive operations.
+- **Progressive disclosure** — simple mode first, advanced Git concepts when needed.
+- **Local-first** — repositories and source code remain on the user's machine.
+- **Fast and lightweight** — use Tauri and Rust instead of shipping a full browser runtime.
+- **Cross-platform from the start** — Windows and macOS are first-class; Linux is supported with pragmatic platform fallbacks.
+
+## Proposed stack
+
+- Tauri 2
+- Rust
+- React
+- TypeScript
+- Vite
+- CSS variables and a small internal component system
+- System Git initially, wrapped behind a Rust service boundary
+
+## Early MVP
+
+1. Open or clone a repository.
+2. Show repository health in plain language.
+3. Review changed files and diffs.
+4. Save a version with an understandable summary.
+5. Pull and publish changes safely.
+6. Create automatic recovery points.
+7. Restore a previous state without exposing reset/reflog complexity.
+8. Guide users through simple merge conflicts.
+9. Offer an optional advanced mode with native Git terminology.
+
+## Getting started
+
+GitOdrile uses **npm** as its supported package manager. The committed
+`package-lock.json` keeps JavaScript dependencies reproducible; use npm rather
+than mixing package managers in the same checkout.
+
+### Requirements
+
+All platforms need:
+
+- [Node.js](https://nodejs.org/) 20 or later (the LTS release is recommended).
+- [Rust stable](https://www.rust-lang.org/tools/install), including `cargo`,
+  `clippy`, and `rustfmt`. The repository selects the stable toolchain in
+  `rust-toolchain.toml`.
+- [Git](https://git-scm.com/).
+
+On Windows, Tauri also requires:
+
+- **Microsoft C++ Build Tools**, with the **Desktop development with C++**
+  workload selected. This provides the `link.exe` linker used by Rust.
+- **Microsoft Edge WebView2 Runtime**. It is included with current Windows 10
+  and Windows 11 installations; install it separately if it is missing.
+
+The current Tauri prerequisite list for Windows, macOS, and Linux is available
+in the [official Tauri documentation](https://v2.tauri.app/start/prerequisites/).
+On macOS, install Xcode Command Line Tools (`xcode-select --install`). On Linux,
+install the WebKitGTK and build packages listed for your distribution there.
+
+#### Windows installation
+
+In PowerShell, Rust can be installed with:
+
+```powershell
+winget install --id Rustlang.Rustup
+```
+
+Then restart the terminal and confirm the installation:
+
+```powershell
+node --version
+npm --version
+rustc --version
+cargo --version
+git --version
+```
+
+If `link.exe` is not found during a Rust build, install or modify Visual Studio
+Build Tools and add the **Desktop development with C++** workload, then open a
+new terminal.
+
+### Install dependencies
+
+From the project root:
+
+```bash
+npm install
+```
+
+For a clean, reproducible install in CI or after cloning, use:
+
+```bash
+npm ci
+```
+
+### Run the application
+
+Start the full desktop application, including Vite and the Tauri shell:
+
+```bash
+npm run tauri dev
+```
+
+To run only the web interface in a browser during UI work:
+
+```bash
+npm run dev
+```
+
+Vite serves the interface at `http://localhost:1420` while it is running.
+
+### Validate and build
+
+Run these checks before opening a pull request:
+
+```bash
+npm run typecheck
+npm run test
+npm run build
+cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
+```
+
+Create a production desktop bundle with:
+
+```bash
+npm run tauri -- build
+```
+
+The frontend checks currently pass even when no test files exist; add tests as
+features are implemented.
+
+The initial code is intentionally small. Read `AGENTS.md`, `DESIGN.md`, and `docs/ARCHITECTURE.md` before implementing features.
+
+## Status
+
+GitOdrile is currently a product concept and technical foundation. APIs, UX language, and architecture may change quickly.
+
+## License
+
+MIT. See `LICENSE`.
