@@ -9,6 +9,8 @@ use std::os::windows::process::CommandExt;
 
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+#[cfg(target_os = "windows")]
+const CREATE_NEW_CONSOLE: u32 = 0x0000_0010;
 
 fn base_git_command() -> Command {
     let mut command = Command::new("git");
@@ -157,7 +159,13 @@ struct WingetActionResult {
 fn spawn_winget(args: &[&str]) -> WingetActionResult {
     #[cfg(target_os = "windows")]
     {
-        match Command::new("winget").args(args).spawn() {
+        // GitOdrile itself may or may not have its own console (hidden in
+        // release, visible in debug — see main.rs), so relying on console
+        // inheritance would make winget's window show up inconsistently, or
+        // not at all, instead of a dedicated window every time.
+        let mut command = Command::new("winget");
+        command.args(args).creation_flags(CREATE_NEW_CONSOLE);
+        match command.spawn() {
             Ok(_) => WingetActionResult {
                 started: true,
                 fallback_url: None,

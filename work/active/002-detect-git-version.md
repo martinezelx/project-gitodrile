@@ -46,7 +46,7 @@ Split out of `work/done/001-open-local-repository.md`, which originally bundled 
 - [x] Simple tests cover: Git found (parses a real `git --version` on the machine running the tests) and the version-string parsing logic in isolation.
 - [x] The required frontend and Rust checks pass.
 - [ ] When Git isn't detected, the user has a way to install it that doesn't require them to manually find the download page themselves — built, not yet verified on a real machine that's actually missing Git (see Validation). This is what keeps this task `active` rather than `done`.
-- [ ] When Git is installed and a newer version is available, the user sees that and can trigger an update the same way — built, not yet verified on a real machine with an outdated Git.
+- [x] When Git is installed and a newer version is available, the user sees that and can trigger an update the same way — verified by the user on a real machine with an outdated Git: clicking "Update" launched the Git-for-Windows installer via winget (took a moment to appear, not instant).
 
 # Relevant files
 
@@ -74,6 +74,7 @@ Split out of `work/done/001-open-local-repository.md`, which originally bundled 
 - Also added 6 Rust tests total (4 carried over/extended from task 001's `open_repository`, 2 new for this task): `git_diagnostics_finds_the_system_git` runs the real command against whatever `git` is on the test machine's PATH (same assumption every other test here already makes), and `parse_git_version_strips_the_leading_label` is a pure string-parsing unit test with no process spawn.
 - Added `tauri-plugin-opener` (crate + `@tauri-apps/plugin-opener`, capability `opener:allow-open-url`) and `install_git()`/`update_git()` (both built on a shared `spawn_winget` helper), returning `{ started, fallbackUrl }`. `src/main.tsx`'s Settings "Git" row grows an "Install Git" button when not installed, or an "Update" button plus an "Update available" badge next to the version when `check_git_update` finds one; both buttons share one `runWingetAction` handler and one status-message line ("Installer/Update launched…" or "Opened the official download page…").
 - `check_git_update` (Rust) runs on Windows only for now; `src/main.tsx` fires it once, right after `git_diagnostics` resolves with `installed: true` (a second effect keyed on `gitDiagnostics?.installed`) rather than on every Settings visit, since it shells out to `winget upgrade` each time.
+- On first real-machine test, clicking "Update" appeared to do nothing at first. Root cause turned out to be two separate (real, worth fixing regardless) issues rather than the update flow being broken: (1) `src-tauri/src/main.rs` had no `windows_subsystem` attribute, so GitOdrile itself runs with a console subsystem — meaning a spawned child with no explicit console flag inherits/shares that console instead of reliably popping its own window; fixed by hiding the app's own console in release builds only (`#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]`) and, more importantly, (2) `spawn_winget` now passes `CREATE_NEW_CONSOLE` explicitly so winget always gets its own visible window regardless of the parent's console state. In the end the installer *did* appear on the user's machine, just after a real delay — `winget` can take a noticeable moment to launch — so the status messages were also reworded to set that expectation ("this can take a moment to appear").
 
 # Validation
 
@@ -82,4 +83,5 @@ Split out of `work/done/001-open-local-repository.md`, which originally bundled 
 - `cargo test` — 6 passed, 0 failed (unchanged by this addition — none of `install_git`/`update_git`/`check_git_update` are unit tested, see Decisions).
 - `npm run typecheck` — pass.
 - `npm run build` — pass.
-- **Not yet done:** running the real desktop app (a) on a machine without Git installed, clicking "Install Git", and confirming winget actually launches and installs it, or the browser fallback opens the right page if winget is unavailable; (b) on a machine with an outdated Git, confirming the "Update available" badge and "Update" button appear and actually trigger `winget upgrade`. Both need the user to check, since they can't be safely automated.
+- User confirmed on a real machine: Git was outdated, "Update available" badge showed, clicking "Update" launched the real Git-for-Windows installer via winget (after a noticeable delay, not instant).
+- **Still not done:** verifying the "Install Git" path on a machine that's actually missing Git — that's the one remaining unchecked criterion above.

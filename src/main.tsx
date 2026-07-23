@@ -315,9 +315,15 @@ function SettingsPanel({
   };
 
   const handleInstallGit = (): Promise<void> =>
-    runWingetAction("install_git", "Installer launched — once it finishes, reopen GitOdrile to detect Git.");
+    runWingetAction(
+      "install_git",
+      "Installer launched — this can take a moment to appear. Reopen GitOdrile once it finishes.",
+    );
   const handleUpdateGit = (): Promise<void> =>
-    runWingetAction("update_git", "Update launched — once it finishes, reopen GitOdrile to see the new version.");
+    runWingetAction(
+      "update_git",
+      "Update launched — this can take a moment to appear. Reopen GitOdrile once it finishes.",
+    );
 
   return (
     <div className="settings-view">
