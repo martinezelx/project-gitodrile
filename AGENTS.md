@@ -161,6 +161,8 @@ In summary:
 
 ## Development conventions
 
+- Work directly on `main`. Do not create feature branches or worktrees for routine changes; only branch when the user explicitly asks for one (e.g. to isolate a risky or long-running experiment).
+- Never add `Co-Authored-By` (or similar AI-attribution) trailers to commit messages.
 - TypeScript strict mode must stay enabled.
 - Rust code must pass `cargo fmt` and `cargo clippy`.
 - Avoid `any` unless interacting with an untyped boundary and document why.
