@@ -201,61 +201,23 @@ function CommandPalette({
   );
 }
 
-function ThemeToggle({ theme, setTheme }: { theme: ThemePreference; setTheme: (theme: ThemePreference) => void }): React.JSX.Element {
-  const cycleTheme = (): void => {
-    const nextIndex = (THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length;
-    setTheme(THEME_ORDER[nextIndex]);
-  };
-
-  return (
-    <button
-      className="icon-button"
-      type="button"
-      aria-label={`Theme: ${THEME_LABELS[theme]}. Click to change.`}
-      title={`Theme: ${THEME_LABELS[theme]}`}
-      onClick={cycleTheme}
-    >
-      {THEME_ICONS[theme]}
-    </button>
-  );
-}
+const FOLDER_ICON = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3.5 6.5a1.5 1.5 0 0 1 1.5-1.5h4l2 2h8a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5z" />
+  </svg>
+);
 
 function OverviewPanel(): React.JSX.Element {
   return (
-    <>
-      <section className="hero-card">
-        <div>
-          <p className="eyebrow">No project open</p>
-          <h2>Version control that speaks your language.</h2>
-          <p>
-            Open a Git project to review changes, save safe versions, publish work,
-            and recover from mistakes without memorising commands.
-          </p>
-        </div>
-        <div className="actions">
-          <button className="primary-button" type="button">Open a project</button>
-          <button className="secondary-button" type="button">Clone from GitHub</button>
-        </div>
-      </section>
-
-      <section className="principles" aria-label="Product principles">
-        <article>
-          <span>01</span>
-          <h3>Clear</h3>
-          <p>Actions describe outcomes instead of exposing jargon first.</p>
-        </article>
-        <article>
-          <span>02</span>
-          <h3>Safe</h3>
-          <p>Risky operations include previews and a recovery path.</p>
-        </article>
-        <article>
-          <span>03</span>
-          <h3>Fast</h3>
-          <p>A lightweight Tauri shell with Rust handling native work.</p>
-        </article>
-      </section>
-    </>
+    <div className="empty-state">
+      <div className="empty-state__icon" aria-hidden="true">{FOLDER_ICON}</div>
+      <h2>No project open</h2>
+      <p>Open a Git project to review changes, save versions, publish work, and recover from mistakes.</p>
+      <div className="empty-state__actions">
+        <button className="primary-button" type="button">Open a project</button>
+        <button className="secondary-button" type="button">Clone from GitHub</button>
+      </div>
+    </div>
   );
 }
 
@@ -474,16 +436,7 @@ function App(): React.JSX.Element {
 
         <section className="workspace">
           <header className="topbar">
-            <div>
-              <p className="eyebrow">{view === "overview" ? "Welcome to" : "Configure"}</p>
-              <h1>{view === "overview" ? "GitOdrile" : "Settings"}</h1>
-            </div>
-            <div className="topbar-actions">
-              <ThemeToggle theme={theme} setTheme={setTheme} />
-              <button className="secondary-button" type="button" onClick={() => setIsAboutOpen(true)}>
-                About
-              </button>
-            </div>
+            <h1>{view === "overview" ? "Overview" : "Settings"}</h1>
           </header>
 
           {view === "overview" ? (
