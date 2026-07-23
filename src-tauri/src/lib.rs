@@ -1,7 +1,8 @@
 #![allow(linker_messages)]
 
+use std::io::ErrorKind;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Output};
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -17,11 +18,35 @@ fn git_command(repo_path: &str) -> Command {
     command
 }
 
+fn run_git(repo_path: &str, args: &[&str]) -> Result<Output, String> {
+    git_command(repo_path).args(args).output().map_err(|error| {
+        if error.kind() == ErrorKind::NotFound {
+            "Git isn't installed, or isn't on your PATH. Install Git and try again.".to_string()
+        } else {
+            "Couldn't run git.".to_string()
+        }
+    })
+}
+
+fn git_stdout(output: &Output) -> String {
+    String::from_utf8_lossy(&output.stdout).trim().to_string()
+}
+
 #[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RepositoryInfo {
     name: String,
     path: String,
     branch: String,
+    kind: RepositoryKind,
+    status_message: String,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "lowercase")]
+enum RepositoryKind {
+    Repository,
+    Worktree,
 }
 
 #[tauri::command]
@@ -36,25 +61,23 @@ fn open_repository(path: String) -> Result<RepositoryInfo, String> {
         return Err("That folder doesn't exist.".to_string());
     }
 
-    let is_repo = git_command(&path)
-        .args(["rev-parse", "--is-inside-work-tree"])
-        .output()
-        .map_err(|_| {
-            "Couldn't run git. Make sure Git is installed and on your PATH.".to_string()
-        })?;
-
+    let is_repo = run_git(&path, &["rev-parse", "--is-inside-work-tree"])?;
     if !is_repo.status.success() {
         return Err("This folder isn't a Git repository.".to_string());
     }
 
-    let branch_output = git_command(&path)
-        .args(["branch", "--show-current"])
-        .output()
-        .map_err(|_| "Couldn't read the current branch.".to_string())?;
+    // A linked worktree's --git-dir (e.g. .git/worktrees/<name>) differs from
+    // the --git-common-dir shared with the main checkout; a normal repository's
+    // are the same path. This is the same check `git` itself relies on.
+    let git_dir = git_stdout(&run_git(&path, &["rev-parse", "--git-dir"])?);
+    let common_dir = git_stdout(&run_git(&path, &["rev-parse", "--git-common-dir"])?);
+    let kind = if git_dir == common_dir {
+        RepositoryKind::Repository
+    } else {
+        RepositoryKind::Worktree
+    };
 
-    let branch = String::from_utf8_lossy(&branch_output.stdout)
-        .trim()
-        .to_string();
+    let branch = git_stdout(&run_git(&path, &["branch", "--show-current"])?);
     let branch = if branch.is_empty() {
         "detached HEAD".to_string()
     } else {
@@ -66,7 +89,18 @@ fn open_repository(path: String) -> Result<RepositoryInfo, String> {
         .map(|value| value.to_string_lossy().to_string())
         .unwrap_or_else(|| path.clone());
 
-    Ok(RepositoryInfo { name, path, branch })
+    let status_message = match kind {
+        RepositoryKind::Repository => format!("This is a Git repository on branch {branch}."),
+        RepositoryKind::Worktree => format!("This is a linked worktree on branch {branch}."),
+    };
+
+    Ok(RepositoryInfo {
+        name,
+        path,
+        branch,
+        kind,
+        status_message,
+    })
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

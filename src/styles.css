@@ -293,11 +293,12 @@ h1 { margin-bottom: 0; font-size: 22px; letter-spacing: -0.01em; }
 }
 .project-summary__icon svg { width: 20px; height: 20px; }
 .project-summary__body { flex: 1; min-width: 0; }
-.project-summary__body h2 { font-size: 17px; margin-bottom: 4px; }
-.project-summary__meta {
-  display: flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 13px; margin-bottom: 2px;
+.project-summary__body h2 { display: flex; align-items: center; gap: 8px; font-size: 17px; margin-bottom: 4px; }
+.project-summary__badge {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.02em; padding: 2px 8px; border-radius: 999px;
+  background: var(--surface-active); color: var(--accent-primary);
 }
-.project-summary__meta svg { width: 13px; height: 13px; }
+.project-summary__meta { color: var(--text-secondary); font-size: 13px; margin-bottom: 2px; }
 .project-summary__path {
   font-family: ui-monospace, monospace; font-size: 12px; color: var(--text-secondary);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;

@@ -7,7 +7,13 @@ import "./styles.css";
 
 type ThemePreference = "system" | "light" | "dark";
 type View = "overview" | "settings";
-type RepositoryInfo = { name: string; path: string; branch: string };
+type RepositoryInfo = {
+  name: string;
+  path: string;
+  branch: string;
+  kind: "repository" | "worktree";
+  statusMessage: string;
+};
 
 const THEME_STORAGE_KEY = "gitodrile-theme";
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "gitodrile-sidebar-collapsed";
@@ -221,13 +227,6 @@ const FOLDER_ICON = (
   </svg>
 );
 
-const BRANCH_ICON = (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="6" cy="6" r="2.2" /><circle cx="6" cy="18" r="2.2" /><circle cx="18" cy="9" r="2.2" />
-    <path d="M6 8.2V15.8" /><path d="M6 8.2a6 6 0 0 0 6 5.8h4" />
-  </svg>
-);
-
 function OverviewPanel({
   project,
   openError,
@@ -246,11 +245,11 @@ function OverviewPanel({
       <div className="project-summary">
         <div className="project-summary__icon" aria-hidden="true">{FOLDER_ICON}</div>
         <div className="project-summary__body">
-          <h2>{project.name}</h2>
-          <p className="project-summary__meta">
-            <span aria-hidden="true">{BRANCH_ICON}</span>
-            {project.branch}
-          </p>
+          <h2>
+            {project.name}
+            {project.kind === "worktree" && <span className="project-summary__badge">Worktree</span>}
+          </h2>
+          <p className="project-summary__meta">{project.statusMessage}</p>
           <p className="project-summary__path">{project.path}</p>
         </div>
         <button className="secondary-button" type="button" onClick={onCloseProject}>
