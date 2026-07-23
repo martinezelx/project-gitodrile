@@ -7,6 +7,7 @@ type ThemePreference = "system" | "light" | "dark";
 type View = "overview" | "settings";
 
 const THEME_STORAGE_KEY = "gitodrile-theme";
+const SIDEBAR_COLLAPSED_STORAGE_KEY = "gitodrile-sidebar-collapsed";
 const APP_VERSION = "0.1.0";
 
 function readStoredTheme(): ThemePreference {
@@ -88,6 +89,16 @@ const NAV_ICONS = {
       <line x1="4" y1="6" x2="20" y2="6" /><circle cx="9" cy="6" r="2" />
       <line x1="4" y1="12" x2="20" y2="12" /><circle cx="15" cy="12" r="2" />
       <line x1="4" y1="18" x2="20" y2="18" /><circle cx="9" cy="18" r="2" />
+    </svg>
+  ),
+  collapse: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="16" rx="3" /><path d="M14 4v16" /><path d="M11 10l-2 2 2 2" />
+    </svg>
+  ),
+  expand: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="16" rx="3" /><path d="M14 4v16" /><path d="M12 10l2 2-2 2" />
     </svg>
   ),
 } as const;
@@ -278,7 +289,14 @@ function App(): React.JSX.Element {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [view, setView] = useState<View>("overview");
   const [theme, setTheme] = useTheme();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
+    () => localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === "true",
+  );
   const aboutDialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(isSidebarCollapsed));
+  }, [isSidebarCollapsed]);
 
   useEffect(() => {
     if (!isAboutOpen) {
@@ -314,6 +332,11 @@ function App(): React.JSX.Element {
     { id: "theme-system", label: "Use system theme", action: () => setTheme("system") },
     { id: "theme-light", label: "Use light theme", action: () => setTheme("light") },
     { id: "theme-dark", label: "Use dark theme", action: () => setTheme("dark") },
+    {
+      id: "toggle-sidebar",
+      label: isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar",
+      action: () => setIsSidebarCollapsed((collapsed) => !collapsed),
+    },
     { id: "about", label: "About GitOdrile", action: () => setIsAboutOpen(true) },
   ];
 
@@ -387,14 +410,16 @@ function App(): React.JSX.Element {
         </div>
       </header>
 
-      <main className="app-shell">
+      <main className={`app-shell${isSidebarCollapsed ? " app-shell--collapsed" : ""}`}>
         <aside className="sidebar">
           <div className="brand">
             <div className="brand-mark" aria-hidden="true">G</div>
-            <div>
-              <strong>GitOdrile</strong>
-              <span>Git without the bite</span>
-            </div>
+            {!isSidebarCollapsed && (
+              <div>
+                <strong>GitOdrile</strong>
+                <span>Git without the bite</span>
+              </div>
+            )}
           </div>
 
           <nav aria-label="Project navigation">
@@ -402,22 +427,23 @@ function App(): React.JSX.Element {
               className={`nav-item${view === "overview" ? " nav-item--active" : ""}`}
               type="button"
               aria-current={view === "overview" ? "page" : undefined}
+              title="Overview"
               onClick={() => setView("overview")}
             >
               <span className="nav-item__icon" aria-hidden="true">{NAV_ICONS.overview}</span>
-              Overview
+              <span className="nav-item__label">Overview</span>
             </button>
-            <button className="nav-item" type="button" disabled title="Coming soon">
+            <button className="nav-item" type="button" disabled title="Changes — Coming soon">
               <span className="nav-item__icon" aria-hidden="true">{NAV_ICONS.changes}</span>
-              Changes
+              <span className="nav-item__label">Changes</span>
             </button>
-            <button className="nav-item" type="button" disabled title="Coming soon">
+            <button className="nav-item" type="button" disabled title="History — Coming soon">
               <span className="nav-item__icon" aria-hidden="true">{NAV_ICONS.history}</span>
-              History
+              <span className="nav-item__label">History</span>
             </button>
-            <button className="nav-item" type="button" disabled title="Coming soon">
+            <button className="nav-item" type="button" disabled title="Recovery — Coming soon">
               <span className="nav-item__icon" aria-hidden="true">{NAV_ICONS.recovery}</span>
-              Recovery
+              <span className="nav-item__label">Recovery</span>
             </button>
           </nav>
 
@@ -426,10 +452,22 @@ function App(): React.JSX.Element {
               className={`nav-item${view === "settings" ? " nav-item--active" : ""}`}
               type="button"
               aria-current={view === "settings" ? "page" : undefined}
+              title="Settings"
               onClick={() => setView("settings")}
             >
               <span className="nav-item__icon" aria-hidden="true">{NAV_ICONS.settings}</span>
-              Settings
+              <span className="nav-item__label">Settings</span>
+            </button>
+            <button
+              className="nav-item"
+              type="button"
+              title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              onClick={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
+            >
+              <span className="nav-item__icon" aria-hidden="true">
+                {isSidebarCollapsed ? NAV_ICONS.expand : NAV_ICONS.collapse}
+              </span>
+              <span className="nav-item__label">Collapse</span>
             </button>
           </nav>
         </aside>

@@ -43,7 +43,8 @@ The main desktop window should broadly support:
    - History;
    - Workspaces/branches;
    - Recovery;
-   - optional advanced Git tools.
+   - optional advanced Git tools;
+   - collapsible to an icon-only rail (persisted, and reachable from the command palette as "Collapse/Expand sidebar") for users working with a narrow window or wanting more room for diffs.
 
 3. **Primary workspace**
    - task-focused content;
@@ -271,3 +272,5 @@ Avoid vague labels such as “Continue” when a more precise action fits.
 9. Settings and Git diagnostics.
 
 Each screen must define loading, empty, success, warning, and error states.
+
+Reuse one visual pattern for all of these across screens rather than each screen inventing its own: a centered block with a small icon in a bordered/shadowed square (`--radius-lg`), one short headline, one line of supporting copy, and 1–2 actions — see `.empty-state` in `styles.css`, first built for the "no project open" Overview state. A loading state is the same layout with a spinner/skeleton instead of the icon; an error state swaps in `--status-danger`. Do not build a bespoke illustration or a different card shape per screen — that's how a "no repository" panel and a "no results" panel end up looking like they belong to two different apps.
