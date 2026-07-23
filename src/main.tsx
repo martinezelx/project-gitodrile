@@ -3,6 +3,77 @@ import ReactDOM from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./styles.css";
 
+type ThemePreference = "system" | "light" | "dark";
+
+const THEME_STORAGE_KEY = "gitodrile-theme";
+
+function readStoredTheme(): ThemePreference {
+  const stored = localStorage.getItem(THEME_STORAGE_KEY);
+  return stored === "light" || stored === "dark" ? stored : "system";
+}
+
+function applyTheme(theme: ThemePreference): void {
+  if (theme === "system") {
+    delete document.documentElement.dataset.theme;
+  } else {
+    document.documentElement.dataset.theme = theme;
+  }
+}
+
+const THEME_ICONS: Record<ThemePreference, React.JSX.Element> = {
+  system: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="13" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+    </svg>
+  ),
+  light: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </svg>
+  ),
+  dark: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" />
+    </svg>
+  ),
+};
+
+const THEME_LABELS: Record<ThemePreference, string> = {
+  system: "Theme: matching system",
+  light: "Theme: light",
+  dark: "Theme: dark",
+};
+
+const THEME_ORDER: ThemePreference[] = ["system", "light", "dark"];
+
+function ThemeToggle(): React.JSX.Element {
+  const [theme, setTheme] = useState<ThemePreference>(() => readStoredTheme());
+
+  useEffect(() => {
+    applyTheme(theme);
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
+
+  const cycleTheme = (): void => {
+    const nextIndex = (THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length;
+    setTheme(THEME_ORDER[nextIndex]);
+  };
+
+  return (
+    <button
+      className="icon-button"
+      type="button"
+      aria-label={THEME_LABELS[theme]}
+      title={THEME_LABELS[theme]}
+      onClick={cycleTheme}
+    >
+      {THEME_ICONS[theme]}
+    </button>
+  );
+}
+
 function App(): React.JSX.Element {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const aboutDialogRef = useRef<HTMLDivElement>(null);
@@ -23,7 +94,9 @@ function App(): React.JSX.Element {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isAboutOpen]);
 
-  const appWindow = getCurrentWindow();
+  const appWindow = "__TAURI_INTERNALS__" in window
+    ? getCurrentWindow()
+    : { minimize: async () => {}, toggleMaximize: async () => {}, close: async () => {} };
   const performWindowAction = (action: () => Promise<void>): void => {
     void action().catch(() => undefined);
   };
@@ -93,9 +166,12 @@ function App(): React.JSX.Element {
               <p className="eyebrow">Welcome to</p>
               <h1>GitOdrile</h1>
             </div>
-            <button className="secondary-button" type="button" onClick={() => setIsAboutOpen(true)}>
-              About
-            </button>
+            <div className="topbar-actions">
+              <ThemeToggle />
+              <button className="secondary-button" type="button" onClick={() => setIsAboutOpen(true)}>
+                About
+              </button>
+            </div>
           </header>
 
           <section className="hero-card">

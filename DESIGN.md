@@ -90,13 +90,48 @@ Colors should be defined semantically rather than by component:
 - `--text-secondary`
 - `--border-subtle`
 - `--accent-primary`
+- `--accent-primary-contrast` (text/icon color placed on top of `--accent-primary`)
 - `--status-success`
 - `--status-warning`
 - `--status-danger`
 - `--diff-added`
 - `--diff-removed`
+- `--overlay` (modal/backdrop scrim)
 
 Do not hard-code product colors throughout components.
+
+### Theming: light and dark
+
+The brand accent is a green (`--accent-primary`), but the same hex value cannot serve both themes: a light, saturated green reads well on a near-black surface but fails WCAG AA contrast on a white one. Each theme gets its own value for every color token, tuned to the same hue family so the brand stays recognizable across themes.
+
+| Token | Dark value | Light value |
+|---|---|---|
+| `--surface-app` | `#0c110e` | `#f4f7f5` |
+| `--surface-panel` | `rgba(24, 34, 28, 0.88)` | `rgba(255, 255, 255, 0.72)` |
+| `--surface-raised` | `#18221c` | `#ffffff` |
+| `--surface-code` | `#141d18` | `#eef2ef` |
+| `--text-primary` | `#edf4ef` | `#101815` |
+| `--text-secondary` | `#9bae9f` | `#55635a` |
+| `--border-subtle` | `rgba(223, 246, 231, 0.1)` | `rgba(16, 24, 20, 0.12)` |
+| `--accent-primary` | `#9de47b` | `#1f7a42` |
+| `--accent-primary-contrast` | `#102010` | `#f4fff2` |
+| `--status-success` | `#9de47b` | `#1f7a42` |
+| `--status-warning` | `#e8b339` | `#8a5b00` |
+| `--status-danger` | `#ff6b5b` | `#b3261e` |
+| `--diff-added` | `#9de47b` | `#1f7a42` |
+| `--diff-removed` | `#ff6b5b` | `#b3261e` |
+| `--overlay` | `rgba(4, 8, 6, 0.68)` | `rgba(16, 24, 20, 0.4)` |
+
+Every text/surface pairing above must hold at least a 4.5:1 contrast ratio (WCAG AA for body text); accent-on-surface pairings used only for large text, icons, or borders may use the AA large-text threshold (3:1) instead.
+
+Theme resolution order (highest priority first):
+
+1. An explicit user choice (light/dark), persisted locally and applied immediately.
+2. The OS-level preference, read via `prefers-color-scheme` and followed live if the user has not overridden it.
+
+The user must always be able to return to "match system" — the toggle is a three-state cycle (`system` → `light` → `dark` → `system`), not a binary switch, so an explicit choice never silently strands the user on a theme that has drifted from their OS setting.
+
+Do not introduce a color anywhere in the product (status badges, diff highlighting, charts, mascot variants) without first checking whether it is expressible through an existing token; new one-off colors fragment the light/dark story.
 
 ## Brand and mascot
 
