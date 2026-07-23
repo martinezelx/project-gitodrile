@@ -31,11 +31,11 @@ Blur/translucency is not the default depth mechanism for GitOdrile chrome. Reser
 
 The main desktop window should broadly support:
 
-1. **Top bar**
-   - current project;
-   - global search / command palette;
-   - sync state;
-   - settings and account entry points.
+1. **Top bar** — implemented as a custom titlebar with three zones (left/center/right), not a traditional File/Edit/View menu bar, which reads as legacy Win32/desktop-app chrome:
+   - left: brand, draggable;
+   - center: a command-palette trigger (`Ctrl`/`Cmd`+`K`), the app's substitute for a menu bar — every action gets a command instead of a menu item;
+   - right: window controls (minimize/maximize/close), styled as small rounded buttons inset from the edge rather than full-height square hit targets, so they read as part of the same rounded-corner system as the rest of the UI instead of bolted-on OS chrome.
+   - The remaining left/right space stays a native drag region so the window is still movable/double-click-maximizable without a menu bar occupying it.
 
 2. **Navigation rail or sidebar**
    - Overview;

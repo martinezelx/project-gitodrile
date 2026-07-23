@@ -92,6 +92,115 @@ const NAV_ICONS = {
   ),
 } as const;
 
+const SEARCH_ICON = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" />
+  </svg>
+);
+
+type Command = { id: string; label: string; hint?: string; action: () => void };
+
+function CommandPalette({
+  isOpen,
+  onClose,
+  commands,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  commands: Command[];
+}): React.JSX.Element | null {
+  const [query, setQuery] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const filtered = commands.filter((command) => command.label.toLowerCase().includes(query.toLowerCase()));
+
+  useEffect(() => {
+    if (isOpen) {
+      setQuery("");
+      setSelectedIndex(0);
+      inputRef.current?.focus();
+    }
+  }, [isOpen]);
+
+  if (!isOpen) {
+    return null;
+  }
+
+  const runCommand = (command: Command | undefined): void => {
+    if (!command) {
+      return;
+    }
+    command.action();
+    onClose();
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (event.key === "Escape") {
+      onClose();
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setSelectedIndex((index) => Math.min(index + 1, filtered.length - 1));
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setSelectedIndex((index) => Math.max(index - 1, 0));
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      runCommand(filtered[selectedIndex]);
+    }
+  };
+
+  return (
+    <div className="palette-backdrop" role="presentation" onMouseDown={onClose}>
+      <div
+        className="palette-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="palette-input-row">
+          <span aria-hidden="true">{SEARCH_ICON}</span>
+          <input
+            ref={inputRef}
+            className="palette-input"
+            type="text"
+            role="combobox"
+            aria-expanded="true"
+            aria-controls="palette-list"
+            aria-autocomplete="list"
+            placeholder="Jump to a view or action…"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setSelectedIndex(0);
+            }}
+            onKeyDown={handleKeyDown}
+          />
+        </div>
+        <ul className="palette-list" id="palette-list" role="listbox">
+          {filtered.length === 0 && <li className="palette-empty">No matching commands</li>}
+          {filtered.map((command, index) => (
+            <li
+              key={command.id}
+              role="option"
+              aria-selected={index === selectedIndex}
+              className="palette-item"
+              onMouseEnter={() => setSelectedIndex(index)}
+              onMouseDown={(event) => {
+                event.preventDefault();
+                runCommand(command);
+              }}
+            >
+              {command.label}
+              {command.hint && <span className="palette-item__hint">{command.hint}</span>}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 function ThemeToggle({ theme, setTheme }: { theme: ThemePreference; setTheme: (theme: ThemePreference) => void }): React.JSX.Element {
   const cycleTheme = (): void => {
     const nextIndex = (THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length;
@@ -204,6 +313,7 @@ function SettingsPanel({
 
 function App(): React.JSX.Element {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [view, setView] = useState<View>("overview");
   const [theme, setTheme] = useTheme();
   const aboutDialogRef = useRef<HTMLDivElement>(null);
@@ -224,6 +334,27 @@ function App(): React.JSX.Element {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isAboutOpen]);
 
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent): void => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setIsPaletteOpen(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
+
+  const commands: Command[] = [
+    { id: "go-overview", label: "Go to Overview", action: () => setView("overview") },
+    { id: "go-settings", label: "Go to Settings", action: () => setView("settings") },
+    { id: "theme-system", label: "Use system theme", action: () => setTheme("system") },
+    { id: "theme-light", label: "Use light theme", action: () => setTheme("light") },
+    { id: "theme-dark", label: "Use dark theme", action: () => setTheme("dark") },
+    { id: "about", label: "About GitOdrile", action: () => setIsAboutOpen(true) },
+  ];
+
   const appWindow = "__TAURI_INTERNALS__" in window
     ? getCurrentWindow()
     : { minimize: async () => {}, toggleMaximize: async () => {}, close: async () => {} };
@@ -235,7 +366,7 @@ function App(): React.JSX.Element {
     <div className="app-window">
       <header className="window-titlebar">
         <div
-          className="window-titlebar__drag-region"
+          className="window-titlebar__drag window-titlebar__drag--left"
           data-tauri-drag-region
           onDoubleClick={() => performWindowAction(() => appWindow.toggleMaximize())}
         >
@@ -244,31 +375,53 @@ function App(): React.JSX.Element {
             <span data-tauri-drag-region>GitOdrile</span>
           </div>
         </div>
-        <div className="window-controls" aria-label="Window controls">
+
+        <div className="window-titlebar__center">
           <button
-            className="window-control"
+            className="command-trigger"
             type="button"
-            aria-label="Minimize window"
-            onClick={() => performWindowAction(() => appWindow.minimize())}
+            aria-label="Open command palette"
+            title="Jump to a view or action"
+            onClick={() => setIsPaletteOpen(true)}
           >
-            <span aria-hidden="true">−</span>
+            <span aria-hidden="true">{SEARCH_ICON}</span>
+            <span>Jump to…</span>
+            <kbd>Ctrl K</kbd>
           </button>
-          <button
-            className="window-control"
-            type="button"
-            aria-label="Maximize or restore window"
-            onClick={() => performWindowAction(() => appWindow.toggleMaximize())}
-          >
-            <span className="window-control__maximize" aria-hidden="true" />
-          </button>
-          <button
-            className="window-control window-control--close"
-            type="button"
-            aria-label="Close window"
-            onClick={() => performWindowAction(() => appWindow.close())}
-          >
-            <span className="window-control__close" aria-hidden="true" />
-          </button>
+        </div>
+
+        <div className="window-titlebar__right">
+          <div
+            className="window-titlebar__drag window-titlebar__drag--right"
+            data-tauri-drag-region
+            onDoubleClick={() => performWindowAction(() => appWindow.toggleMaximize())}
+          />
+          <div className="window-controls" aria-label="Window controls">
+            <button
+              className="window-control"
+              type="button"
+              aria-label="Minimize window"
+              onClick={() => performWindowAction(() => appWindow.minimize())}
+            >
+              <span aria-hidden="true">−</span>
+            </button>
+            <button
+              className="window-control"
+              type="button"
+              aria-label="Maximize or restore window"
+              onClick={() => performWindowAction(() => appWindow.toggleMaximize())}
+            >
+              <span className="window-control__maximize" aria-hidden="true" />
+            </button>
+            <button
+              className="window-control window-control--close"
+              type="button"
+              aria-label="Close window"
+              onClick={() => performWindowAction(() => appWindow.close())}
+            >
+              <span className="window-control__close" aria-hidden="true" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -340,6 +493,8 @@ function App(): React.JSX.Element {
           )}
         </section>
       </main>
+
+      <CommandPalette isOpen={isPaletteOpen} onClose={() => setIsPaletteOpen(false)} commands={commands} />
 
       {isAboutOpen && (
         <div className="about-backdrop" role="presentation" onMouseDown={() => setIsAboutOpen(false)}>
