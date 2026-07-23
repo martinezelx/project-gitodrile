@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/core";
+import { open as openFolderDialog } from "@tauri-apps/plugin-dialog";
 import "./styles.css";
 
 type ThemePreference = "system" | "light" | "dark";
 type View = "overview" | "settings";
+type RepositoryInfo = { name: string; path: string; branch: string };
 
 const THEME_STORAGE_KEY = "gitodrile-theme";
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "gitodrile-sidebar-collapsed";
@@ -218,15 +221,58 @@ const FOLDER_ICON = (
   </svg>
 );
 
-function OverviewPanel(): React.JSX.Element {
+const BRANCH_ICON = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="6" cy="6" r="2.2" /><circle cx="6" cy="18" r="2.2" /><circle cx="18" cy="9" r="2.2" />
+    <path d="M6 8.2V15.8" /><path d="M6 8.2a6 6 0 0 0 6 5.8h4" />
+  </svg>
+);
+
+function OverviewPanel({
+  project,
+  openError,
+  isOpening,
+  onOpenProject,
+  onCloseProject,
+}: {
+  project: RepositoryInfo | null;
+  openError: string | null;
+  isOpening: boolean;
+  onOpenProject: () => void;
+  onCloseProject: () => void;
+}): React.JSX.Element {
+  if (project) {
+    return (
+      <div className="project-summary">
+        <div className="project-summary__icon" aria-hidden="true">{FOLDER_ICON}</div>
+        <div className="project-summary__body">
+          <h2>{project.name}</h2>
+          <p className="project-summary__meta">
+            <span aria-hidden="true">{BRANCH_ICON}</span>
+            {project.branch}
+          </p>
+          <p className="project-summary__path">{project.path}</p>
+        </div>
+        <button className="secondary-button" type="button" onClick={onCloseProject}>
+          Close project
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="empty-state">
       <div className="empty-state__icon" aria-hidden="true">{FOLDER_ICON}</div>
       <h2>No project open</h2>
       <p>Open a Git project to review changes, save versions, publish work, and recover from mistakes.</p>
+      {openError && <p className="empty-state__error">{openError}</p>}
       <div className="empty-state__actions">
-        <button className="primary-button" type="button">Open a project</button>
-        <button className="secondary-button" type="button">Clone from GitHub</button>
+        <button className="primary-button" type="button" onClick={onOpenProject} disabled={isOpening}>
+          {isOpening ? "Opening…" : "Open a project"}
+        </button>
+        <button className="secondary-button" type="button" disabled title="Coming soon">
+          Clone from GitHub
+        </button>
       </div>
     </div>
   );
@@ -292,11 +338,31 @@ function App(): React.JSX.Element {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
     () => localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === "true",
   );
+  const [project, setProject] = useState<RepositoryInfo | null>(null);
+  const [openError, setOpenError] = useState<string | null>(null);
+  const [isOpening, setIsOpening] = useState(false);
   const aboutDialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(isSidebarCollapsed));
   }, [isSidebarCollapsed]);
+
+  const handleOpenProject = async (): Promise<void> => {
+    setOpenError(null);
+    try {
+      const selected = await openFolderDialog({ directory: true, multiple: false, title: "Open a Git project" });
+      if (!selected || Array.isArray(selected)) {
+        return;
+      }
+      setIsOpening(true);
+      const info = await invoke<RepositoryInfo>("open_repository", { path: selected });
+      setProject(info);
+    } catch (error) {
+      setOpenError(typeof error === "string" ? error : "Couldn't open that folder.");
+    } finally {
+      setIsOpening(false);
+    }
+  };
 
   useEffect(() => {
     if (!isAboutOpen) {
@@ -329,6 +395,9 @@ function App(): React.JSX.Element {
   const commands: Command[] = [
     { id: "go-overview", label: "Go to Overview", action: () => setView("overview") },
     { id: "go-settings", label: "Go to Settings", action: () => setView("settings") },
+    ...(project
+      ? [{ id: "close-project", label: "Close project", action: () => setProject(null) }]
+      : [{ id: "open-project", label: "Open a project", action: () => void handleOpenProject() }]),
     { id: "theme-system", label: "Use system theme", action: () => setTheme("system") },
     { id: "theme-light", label: "Use light theme", action: () => setTheme("light") },
     { id: "theme-dark", label: "Use dark theme", action: () => setTheme("dark") },
@@ -478,7 +547,13 @@ function App(): React.JSX.Element {
           </header>
 
           {view === "overview" ? (
-            <OverviewPanel />
+            <OverviewPanel
+              project={project}
+              openError={openError}
+              isOpening={isOpening}
+              onOpenProject={() => void handleOpenProject()}
+              onCloseProject={() => setProject(null)}
+            />
           ) : (
             <SettingsPanel theme={theme} setTheme={setTheme} onOpenAbout={() => setIsAboutOpen(true)} />
           )}
