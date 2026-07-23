@@ -14,6 +14,7 @@ type RepositoryInfo = {
   kind: "repository" | "worktree";
   statusMessage: string;
 };
+type GitDiagnostics = { installed: boolean; version: string | null };
 
 const THEME_STORAGE_KEY = "gitodrile-theme";
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "gitodrile-sidebar-collapsed";
@@ -281,10 +282,12 @@ function SettingsPanel({
   theme,
   setTheme,
   onOpenAbout,
+  gitDiagnostics,
 }: {
   theme: ThemePreference;
   setTheme: (theme: ThemePreference) => void;
   onOpenAbout: () => void;
+  gitDiagnostics: GitDiagnostics | null;
 }): React.JSX.Element {
   return (
     <div className="settings-view">
@@ -324,6 +327,18 @@ function SettingsPanel({
             View about
           </button>
         </div>
+        <div className="settings-row">
+          <div>
+            <strong>Git</strong>
+            {gitDiagnostics === null && <p>Checking…</p>}
+            {gitDiagnostics?.installed && <p>{gitDiagnostics.version}</p>}
+            {gitDiagnostics && !gitDiagnostics.installed && (
+              <p className="settings-row__warning">
+                Not detected. Install Git and make sure it's on your PATH.
+              </p>
+            )}
+          </div>
+        </div>
       </section>
     </div>
   );
@@ -340,11 +355,18 @@ function App(): React.JSX.Element {
   const [project, setProject] = useState<RepositoryInfo | null>(null);
   const [openError, setOpenError] = useState<string | null>(null);
   const [isOpening, setIsOpening] = useState(false);
+  const [gitDiagnostics, setGitDiagnostics] = useState<GitDiagnostics | null>(null);
   const aboutDialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(isSidebarCollapsed));
   }, [isSidebarCollapsed]);
+
+  useEffect(() => {
+    invoke<GitDiagnostics>("git_diagnostics")
+      .then(setGitDiagnostics)
+      .catch(() => setGitDiagnostics({ installed: false, version: null }));
+  }, []);
 
   const handleOpenProject = async (): Promise<void> => {
     setOpenError(null);
@@ -554,7 +576,12 @@ function App(): React.JSX.Element {
               onCloseProject={() => setProject(null)}
             />
           ) : (
-            <SettingsPanel theme={theme} setTheme={setTheme} onOpenAbout={() => setIsAboutOpen(true)} />
+            <SettingsPanel
+              theme={theme}
+              setTheme={setTheme}
+              onOpenAbout={() => setIsAboutOpen(true)}
+              gitDiagnostics={gitDiagnostics}
+            />
           )}
         </section>
       </main>

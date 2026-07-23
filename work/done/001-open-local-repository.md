@@ -43,8 +43,8 @@ The implementation must establish patterns that later repository operations can 
 - Authentication and remote-provider integration.
 - Saving versions, fetch, pull, or push.
 - Designing the final onboarding experience.
-- Detecting/reporting the installed Git version — a separate concern from opening a repository (see Decisions).
-- Automated tests for this slice (see Decisions).
+- Detecting/reporting the installed Git version — its own task, see `work/done/002-detect-git-version.md`.
+- The full integration-test matrix from `docs/ARCHITECTURE.md` (ahead/behind, merge conflict, non-ASCII paths, etc.) — only enough to cover what this task actually builds.
 
 # Acceptance criteria
 
@@ -56,6 +56,7 @@ The implementation must establish patterns that later repository operations can 
 - [x] Missing or unusable Git produces a structured diagnostic with remediation guidance.
 - [x] React receives typed repository data rather than raw command output.
 - [x] The primary result is explained in plain language, with exact Git details available secondarily.
+- [x] Simple Rust tests cover valid repo, non-repo folder, missing folder, and linked-worktree detection using temporary repositories.
 - [x] The required frontend and Rust checks pass.
 
 # Relevant files
@@ -77,8 +78,9 @@ The implementation must establish patterns that later repository operations can 
 
 - This task should define a structured command/result boundary that later Git features can extend.
 - Do not expose raw stderr as the main user-facing message.
-- **Scope trim (agreed with user):** dropped "detect and report the installed Git version" from this task. `work/README.md`'s own naming example already treats it as a separate task (`002-detect-git-version.md`), and `backlog.md` lists it under "Foundation" separately from "Open and validate a local Git repository" under "Repository experience" — bundling it here contradicted the project's own task granularity. It stays an unpromoted backlog idea; not worth a task yet ("una tontería de momento").
-- **Scope trim (agreed with user):** dropped the automated-tests criterion. The full integration-test matrix in `docs/ARCHITECTURE.md` (ahead/behind, merge conflict, non-ASCII paths, etc.) is a testing strategy for the whole Git layer over time, not a first-slice checklist, and none of those scenarios are touched by what this task builds. The user also noted this code is expected to change significantly as related repository features land, so tests were deferred rather than written against a boundary that isn't stable yet.
+- **Scope trim (agreed with user), later corrected:** "detect and report the installed Git version" was first dropped from this task, on the grounds that `work/README.md`'s own naming example already treats it as a separate task (`002-detect-git-version.md`), and `backlog.md` lists it under "Foundation" separately from "Open and validate a local Git repository" under "Repository experience". The user then confirmed the feature itself is still needed, just not inside *this* task — so it was promoted and built as `work/done/002-detect-git-version.md` right after this one, keeping the task granularity intact.
+- **Scope trim, then partially reinstated:** automated tests were first deferred (see below), then the user asked for "some simple ones" while task 002 was underway. `open_repository`'s tests (valid repo, non-repo folder, missing folder, linked worktree) were added at that point, using real temporary Git repositories rather than mocks — see Implementation notes.
+- The full integration-test matrix in `docs/ARCHITECTURE.md` (ahead/behind, merge conflict, non-ASCII paths, etc.) remains out of scope here — that's a testing strategy for the whole Git layer over time, and none of those scenarios are touched by what this task builds.
 - Worktree vs. repository is determined by comparing `git rev-parse --git-dir` and `--git-common-dir`: equal means a normal repository, different means a linked worktree — the same check Git itself uses internally.
 
 # Implementation notes
@@ -87,11 +89,13 @@ The implementation must establish patterns that later repository operations can 
 - `src-tauri/Cargo.toml` / `capabilities/default.json`: added `tauri-plugin-dialog` and the single `dialog:allow-open` permission — nothing broader.
 - `src/main.tsx`: "Open a project" opens the native folder picker (`@tauri-apps/plugin-dialog`), calls `open_repository`, and Overview renders a project summary (name, worktree badge when relevant, plain-language status message, path) on success, or an inline error on failure. Cancelling the picker resolves to `null`/no-op — no error shown. "Clone from GitHub" stays disabled ("Coming soon"); persisting recent projects is intentionally out of scope here.
 - Command palette gained matching "Open a project" / "Close project" entries.
+- `src-tauri/src/lib.rs` `#[cfg(test)] mod tests`: added while implementing task 002, covering `open_repository` — `open_repository_recognizes_a_valid_repository`, `open_repository_rejects_a_non_repository_folder`, `open_repository_rejects_a_missing_folder`, `open_repository_detects_a_linked_worktree`. Each creates/removes a real temporary Git repository (via `git init`, `git commit --allow-empty`, `git worktree add`) rather than mocking the process — no new test-only dependency.
 
 # Validation
 
 - `cargo fmt -- --check` — pass.
 - `cargo clippy --all-targets --all-features -- -D warnings` — pass, no warnings.
+- `cargo test` — pass (4 of the 6 tests in the module cover this task; the other 2 belong to task 002).
 - `npm run typecheck` — pass.
 - `npm run build` — pass.
-- Native folder picker and validation against a real repository were exercised by the user running the actual desktop app (`npm run tauri dev`), not through automated tests — see Decisions above.
+- Native folder picker exercised by the user running the actual desktop app (`npm run tauri dev`) — the dialog itself isn't covered by the Rust tests since it's a native OS surface, not process logic.

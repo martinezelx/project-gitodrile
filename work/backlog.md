@@ -4,7 +4,6 @@ This file is an inbox for ideas that are not yet approved or sufficiently refine
 
 ## Foundation
 
-- Detect and explain the installed Git version.
 - Add structured Git command execution in Rust.
 - Define typed Rust-to-frontend error contracts.
 - Persist and reopen recent projects.
@@ -12,7 +11,6 @@ This file is an inbox for ideas that are not yet approved or sufficiently refine
 
 ## Repository experience
 
-- Open and validate a local Git repository or worktree.
 - Explain repository health in plain language.
 - Show changed, staged, untracked, ignored, and conflicted files.
 - Build a readable diff viewer.
