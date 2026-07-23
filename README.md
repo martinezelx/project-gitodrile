@@ -138,6 +138,20 @@ features are implemented.
 
 The initial code is intentionally small. Read `AGENTS.md`, `DESIGN.md`, and `docs/ARCHITECTURE.md` before implementing features.
 
+## Local work management
+
+GitOdrile keeps its backlog, active tasks, blockers, and completed work inside the repository under `work/`. This is the source of truth for implementation context, so coding agents do not need an external issue tracker.
+
+Before starting work:
+
+1. Read `work/README.md`.
+2. Select an approved task from `work/active/`.
+3. Stay within its declared scope and acceptance criteria.
+4. Update the task honestly as decisions are made and checks are run.
+5. Move completed work to `work/done/`; move blocked work to `work/blocked/`.
+
+Ideas in `work/backlog.md` are not approved for implementation until they are promoted into an active task.
+
 ## Status
 
 GitOdrile is currently a product concept and technical foundation. APIs, UX language, and architecture may change quickly.

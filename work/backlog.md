@@ -1,0 +1,50 @@
+# GitOdrile backlog
+
+This file is an inbox for ideas that are not yet approved or sufficiently refined for implementation. Promote an item into `work/active/` using `work/templates/task.md` before coding it.
+
+## Foundation
+
+- Detect and explain the installed Git version.
+- Add structured Git command execution in Rust.
+- Define typed Rust-to-frontend error contracts.
+- Persist and reopen recent projects.
+- Add application logging with privacy-safe defaults.
+
+## Repository experience
+
+- Open and validate a local Git repository or worktree.
+- Explain repository health in plain language.
+- Show changed, staged, untracked, ignored, and conflicted files.
+- Build a readable diff viewer.
+- Detect changes caused only by line-ending normalization.
+
+## Save and history
+
+- Create a safe “Save version” flow.
+- Generate optional commit message suggestions locally or through an opt-in AI provider.
+- Present history as an understandable timeline.
+- Compare two saved versions.
+- Restore an earlier version through a reversible plan.
+
+## Sync and collaboration
+
+- Detect remotes and upstream configuration.
+- Implement safe fetch and publish flows.
+- Explain ahead/behind state without hiding exact Git details.
+- Guide users through overlapping changes.
+- Support GitHub authentication after the local workflow is stable.
+
+## Product and design
+
+- Create the GitOdrile crocodile icon and mascot system.
+- Define final light and dark color tokens.
+- Design onboarding and Git diagnostics.
+- Add command palette and keyboard shortcuts.
+- Validate accessibility for the primary workflows.
+
+## Distribution
+
+- Generate signed Windows installers.
+- Add macOS signing and notarization.
+- Package Linux builds and document supported distributions.
+- Design the update strategy.
